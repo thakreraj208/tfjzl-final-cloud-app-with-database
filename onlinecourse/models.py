@@ -102,55 +102,35 @@ class Enrollment(models.Model):
 #    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
 #    choices = models.ManyToManyField(Choice)
 
+class Question(models.Model):
+    question = models.TextField()
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    grade = models.IntegerField(default=0)
 
-from django.contrib import admin
+    def is_get_score(self, selected_ids):
+        all_answers = self.choice_set.filter(is_correct=True).count()
+        selected_correct = self.choice_set.filter(
+            is_correct=True,
+            id__in=selected_ids
+        ).count()
 
-# <HINT> Import any new Models here
-
-from .models import Course, Lesson, Instructor, Learner, Question, Choice
-
-
-# <HINT> Register QuestionInline and ChoiceInline classes here
-
-class ChoiceInline(admin.StackedInline):
-    model = Choice
-    extra = 2
-
-
-class QuestionInline(admin.StackedInline):
-    model = Question
-    extra = 2
+        if all_answers == selected_correct:
+            return True
+        else:
+            return False
 
 
-class LessonInline(admin.StackedInline):
-    model = Lesson
-    extra = 5
+# Choice model
+class Choice(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    choice = models.TextField()
+    is_correct = models.BooleanField()
 
 
-# Register your models here.
-
-class CourseAdmin(admin.ModelAdmin):
-    inlines = [LessonInline]
-    list_display = ('name', 'pub_date')
-    list_filter = ['pub_date']
-    search_fields = ['name', 'description']
-
-
-class LessonAdmin(admin.ModelAdmin):
-    inlines = [QuestionInline]
-    list_display = ['title']
-
-
-class QuestionAdmin(admin.ModelAdmin):
-    inlines = [ChoiceInline]
-    list_display = ['question']
-
-
-# <HINT> Register Question and Choice models here
-
-admin.site.register(Course, CourseAdmin)
-admin.site.register(Lesson, LessonAdmin)
-admin.site.register(Instructor)
-admin.site.register(Learner)
-admin.site.register(Question, QuestionAdmin)
-admin.site.register(Choice)
+# Submission model
+class Submission(models.Model):
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE
+    )
+    choices = models.ManyToManyField(Choice)
